@@ -38,6 +38,19 @@ async function run(){
         })
 
         //review api
+        app.get('/orders', async(req, res)=>{
+            console.log(req.query);
+            const query = {};
+            if(req.query.email){
+                query = {
+                    email: req.req.query.email
+                }
+            }
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
+        })
+        
         app.post('/reviews',async(req, res) =>{
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
