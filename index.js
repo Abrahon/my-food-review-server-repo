@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const jwt =require('jsonwebtoken');
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 require('dotenv').config();
@@ -24,10 +26,27 @@ async function run(){
         const serviceCollection = client.db('foodReview').collection('services');
         const reviewCollection = client.db('foodReview').collection('reviews');
 
+        app.post('/jwt', (req, res)=>{
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{expiresIn: '1h'})
+            res.send({token})
+            // console.log(user);
+
+        })
+
         app.get('/services', async(req, res)=>{
             const query = {}
-            const cursor = serviceCollection.find(query);
+           
+            const cursor = serviceCollection.find(query)
             const services = await cursor.toArray();
+            res.send(services); 
+
+        });
+        app.get('/services-limit', async(req, res)=>{
+            const query = {}
+            const cursor = serviceCollection.find(query);
+            
+            const services = await cursor.limit(3).toArray();
             res.send(services); 
         });
         app.get('/services/:id', async(req, res)=>{
@@ -39,6 +58,7 @@ async function run(){
 
         //review api
         app.get('/reviews', async(req, res)=>{
+            console.log(req.headers.authorization)
             console.log(req.query);
             let query = {};
             if(req.query.email){
@@ -46,7 +66,7 @@ async function run(){
                     email: req.query.email
                 }
             }
-            const cursor = reviewCollection.find(query);
+            const cursor = reviewCollection.find(query).sort({_id: -1});
             const reviews = await cursor.toArray();
             res.send(reviews);
         })
@@ -62,6 +82,7 @@ async function run(){
             const id =req.params.id;
             const status = req.body.status
             const query = {_id: ObjectId(id) }
+
             const updatedDoc = {
                 $set:{
                     status: status
